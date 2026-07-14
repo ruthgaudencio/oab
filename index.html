@@ -254,7 +254,7 @@ const PLAN=[
 const KEY="oab2026";
 let S={days:{},topics:{},sim:[],sync:null,mantra:""};
 const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>[...r.querySelectorAll(s)];
-const iso=d=>d.toISOString().slice(0,10);
+const iso=d=>{const t=new Date(d.getTime()-d.getTimezoneOffset()*6e4);return t.toISOString().slice(0,10)};
 const parse=s=>new Date(s+"T12:00:00");
 const days=(a,b)=>Math.round((parse(b)-parse(a))/864e5);
 const fmt=s=>parse(s).toLocaleDateString("pt-BR",{day:"2-digit",month:"short"});
