@@ -474,20 +474,43 @@ function vSimulados(){
 
 async function push(){
   if(!S.sync||!S.sync.url)return;
+  const e=$("#syncst");
   try{
-    await fetch(`${S.sync.url}/rest/v1/oab_state?on_conflict=id`,{method:"POST",
+    const r=await fetch(`${S.sync.url}/rest/v1/oab_state?on_conflict=id`,{method:"POST",
       headers:{apikey:S.sync.key,Authorization:"Bearer "+S.sync.key,"Content-Type":"application/json",Prefer:"resolution=merge-duplicates"},
       body:JSON.stringify({id:S.sync.id,data:{days:S.days,topics:S.topics,sim:S.sim,mantra:S.mantra},updated_at:new Date().toISOString()})});
-    const e=$("#syncst"); if(e)e.textContent="Salvo na nuvem às "+new Date().toLocaleTimeString("pt-BR");
-  }catch(e){const el=$("#syncst"); if(el)el.textContent="Não consegui sincronizar. Os dados estão salvos neste aparelho."}
+    if(!r.ok){
+      const txt=await r.text();
+      if(e)e.textContent=`ERRO ${r.status} — não salvou na nuvem. ${txt.slice(0,120)}`;
+      toast(`Não salvou na nuvem (erro ${r.status})`);
+      return;
+    }
+    if(e)e.textContent="Salvo na nuvem às "+new Date().toLocaleTimeString("pt-BR");
+  }catch(err){
+    if(e)e.textContent="Sem conexão — salvo só neste aparelho. Abra o app conectada para sincronizar.";
+    toast("Sem conexão — salvo só aqui.");
+  }
 }
 async function pull(){
   if(!S.sync||!S.sync.url)return;
+  const e=$("#syncst");
   try{
     const r=await fetch(`${S.sync.url}/rest/v1/oab_state?id=eq.${S.sync.id}&select=data`,{headers:{apikey:S.sync.key,Authorization:"Bearer "+S.sync.key}});
+    if(!r.ok){
+      const txt=await r.text();
+      if(e)e.textContent=`ERRO ${r.status} ao buscar. ${txt.slice(0,120)}`;
+      toast(`Erro ${r.status} ao buscar da nuvem`);
+      return;
+    }
     const j=await r.json();
-    if(j[0]&&j[0].data){const x=j[0].data;S.days=x.days||{};S.topics=x.topics||{};S.sim=x.sim||[];if(x.mantra)S.mantra=x.mantra;keep();render();toast("Dados carregados.")}
-  }catch(e){toast("Não consegui buscar da nuvem.")}
+    if(j[0]&&j[0].data){
+      const x=j[0].data;
+      S.days=x.days||{};S.topics=x.topics||{};S.sim=x.sim||[];if(x.mantra)S.mantra=x.mantra;
+      keep();render();toast("Dados carregados.");
+    }else{
+      toast("Nuvem vazia — nada para buscar.");
+    }
+  }catch(err){toast("Sem conexão com a nuvem.")}
 }
 function vConfig(){
   const c=S.sync||{url:"",key:"",id:"mari"};
